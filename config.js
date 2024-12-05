@@ -1,5 +1,5 @@
-export const GROUP_NAME = 'New Group'
+export const GROUP_NAME = 'monetazone'
 export const MAX_GROUPS = 5
-export const botUsername = '@botFather' // bot username
-export const GROUP_ABOUT = 'This group was created by script'
-export const COMMAND = '/start'
+export const botUsername = '@monetazone_bot' // bot username
+export const GROUP_ABOUT = 'Личный кабинет для общения с менеджером'
+export const COMMAND = '/new'

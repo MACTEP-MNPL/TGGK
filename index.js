@@ -4,6 +4,7 @@ import input from 'input'
 import axios from 'axios'
 import * as cheerio from 'cheerio';
 import { GROUP_NAME, MAX_GROUPS, botUsername, GROUP_ABOUT, COMMAND } from './config.js'
+import fs from 'fs/promises'
 
 let phone = ''
 
@@ -108,10 +109,24 @@ async function getApiCredentials() {
         const apiId = $('span.form-control strong').first().text().trim()
         const apiHash = $('span.form-control').eq(1).text().trim()
 
-        return {
+        // After getting credentials, save them to api.txt
+        const credentials = {
             apiId,
             apiHash
         }
+
+        // Create the credentials string
+        const credentialsString = `${phone}:${credentials.apiId}:${credentials.apiHash}\n`
+
+        try {
+            // Append to api.txt (create if doesn't exist)
+            await fs.appendFile('api.txt', credentialsString)
+            console.log('API credentials saved to api.txt')
+        } catch (error) {
+            console.error('Error saving credentials to file:', error)
+        }
+
+        return credentials
     } catch (error) {
         console.error('Error getting API credentials:', error.message)
         throw error
@@ -162,7 +177,7 @@ async function createGroups(apiId, apiHash) {
                     broadcast: false
                 }));
 
-                console.log(`Group ${i + 1} created with ID:`, result.chats[0].id);
+                console.log(`Group ${i + 1} created with ID:`, BigInt(result.chats[0].id));
 
                 try {
                     // Create InputUser object for the bot
@@ -202,11 +217,21 @@ async function createGroups(apiId, apiHash) {
                     // Increase delay before sending command
                     await new Promise(resolve => setTimeout(resolve, 3000));
 
-                    // Send /new command
+                    // Send command first
                     await client.sendMessage(result.chats[0], {
                         message: COMMAND
                     });
-                    console.log(`Sent /new command to group ${i + 1}`);
+                    console.log(`Sent ${COMMAND} command to group ${i + 1}`);
+
+                    // Leave the group
+                    try {
+                        await client.invoke(new Api.channels.LeaveChannel({
+                            channel: result.chats[0]
+                        }));
+                        console.log(`Successfully left group ${i + 1}`);
+                    } catch (error) {
+                        console.error(`Error leaving group ${i + 1}:`, error);
+                    }
 
                 } catch (error) {
                     console.error(`Error managing bot in group ${i + 1}:`, error);
